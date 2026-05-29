@@ -1,23 +1,25 @@
+# This is a root Argo CD app (App of Apps pattern).
+# It tells Argo CD to sync all child apps from the applications folder in Git.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: platform-root
-  namespace: argocd # Namespace where the Argo CD Application resource lives
+  namespace: argocd # Where this app object is created
   finalizers:
-    # The default behaviour is foreground cascading deletion
+    # Delete child resources first, then delete this app
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default # The Argo CD Project this application belongs to
+  project: default # Argo CD project name
   source:
-    repoURL: https://github.com/daws-84s/eks-argocd.git # URL of the Git repository
-    targetRevision: main # The specific branch, tag, or commit to sync from
-    path: applications # The path within the repository where the application manifests are located
+    repoURL: https://github.com/daws-84s/eks-argocd.git # Git repo with manifests
+    targetRevision: main # Branch to watch
+    path: applications # Folder to sync from repo
   destination:
-    server: https://kubernetes.default.svc # The API server URL of the target Kubernetes cluster
-    namespace: argocd # The namespace in the target cluster where the application will be deployed
+    server: https://kubernetes.default.svc # Target Kubernetes cluster
+    namespace: argocd # Target namespace
   syncPolicy:
-    automated: # Enable automated synchronization
-      prune: true # Delete resources that are no longer in Git
-      selfHeal: true # Revert changes made manually in the cluster to match Git
+    automated: # Auto-sync from Git
+      prune: true # Remove resources deleted in Git
+      selfHeal: true # Fix manual changes in cluster
     syncOptions:
-      - CreateNamespace=true # Automatically create the target namespace if it doesn't exist
+      - CreateNamespace=true # Create namespace if missing
